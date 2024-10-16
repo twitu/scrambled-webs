@@ -2,11 +2,14 @@
   "manifest_version": 3,
   "name": "Scrambled Webs",
   "version": "1.0",
-  "description": "Drag and reposition elements on any webpage",
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "description": "Scramble and share any website",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
   "host_permissions": [
-    "<all_urls>",
-    "https://scrambledwebs.fun/*"
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html"
@@ -16,9 +19,21 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["styles.css"]
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
     }
-  ]
+  ],
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
 }
