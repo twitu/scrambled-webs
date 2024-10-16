@@ -3,6 +3,8 @@ let draggedElement = null;
 let originalStyles = new Map();
 let originalSizes = new Map();
 let scrambledElements = new Map();
+let dragOffset = { x: 0, y: 0 };
+let globalZIndex = 9999;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "toggle") {
@@ -43,24 +45,24 @@ function startDragging(e) {
   saveOriginalStyles(draggedElement);
   saveOriginalSize(draggedElement);
   
-  draggedElement.style.position = "fixed";
-  draggedElement.style.zIndex = "9999";
-  draggedElement.style.width = originalSizes.get(draggedElement).width + "px";
-  draggedElement.style.height = originalSizes.get(draggedElement).height + "px";
-  
   const rect = draggedElement.getBoundingClientRect();
-  draggedElement.style.left = rect.left + "px";
-  draggedElement.style.top = rect.top + "px";
+  dragOffset.x = e.clientX - rect.left;
+  dragOffset.y = e.clientY - rect.top;
+  
+  draggedElement.style.position = "fixed";
+  draggedElement.style.width = rect.width + "px";
+  draggedElement.style.height = rect.height + "px";
+  draggedElement.style.zIndex = (++globalZIndex).toString();
 }
 
 function drag(e) {
   if (!draggedElement) return;
   e.preventDefault();
-  const left = e.clientX - draggedElement.offsetWidth / 2 + "px";
-  const top = e.clientY - draggedElement.offsetHeight / 2 + "px";
+  const left = e.clientX - dragOffset.x + "px";
+  const top = e.clientY - dragOffset.y + "px";
   draggedElement.style.left = left;
   draggedElement.style.top = top;
-  scrambledElements.set(draggedElement, { left, top });
+  scrambledElements.set(draggedElement, { left, top, zIndex: draggedElement.style.zIndex });
 }
 
 function stopDragging(e) {
@@ -92,11 +94,11 @@ function restoreElements() {
   });
   originalStyles.clear();
   originalSizes.clear();
+  scrambledElements.clear();
 }
 
 function saveState() {
   const state = {
-    url: window.location.href,
     elements: []
   };
 
@@ -104,7 +106,8 @@ function saveState() {
     state.elements.push({
       selector: generateUniqueSelector(element),
       left: styles.left,
-      top: styles.top
+      top: styles.top,
+      zIndex: styles.zIndex
     });
   });
 
@@ -113,10 +116,6 @@ function saveState() {
 
 function loadState(encodedState) {
   const state = JSON.parse(atob(encodedState));
-  if (state.url !== window.location.href) {
-    console.error("State URL does not match current URL");
-    return;
-  }
 
   state.elements.forEach(elem => {
     const element = document.querySelector(elem.selector);
@@ -126,11 +125,12 @@ function loadState(encodedState) {
       element.style.position = "fixed";
       element.style.left = elem.left;
       element.style.top = elem.top;
-      element.style.zIndex = "9999";
-      scrambledElements.set(element, { left: elem.left, top: elem.top });
+      element.style.zIndex = elem.zIndex;
+      scrambledElements.set(element, { left: elem.left, top: elem.top, zIndex: elem.zIndex });
     }
   });
 
+  globalZIndex = Math.max(...state.elements.map(elem => parseInt(elem.zIndex)), 9999);
   enableDragging();
 }
 

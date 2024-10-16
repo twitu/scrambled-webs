@@ -16,7 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
   saveButton.addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: "save" }, (response) => {
-        const shareUrl = `https://scrambledwebs.fun/?state=${response}`;
+        const currentUrl = new URL(tabs[0].url);
+        currentUrl.searchParams.set('scrambled', response);
+        const shareUrl = currentUrl.toString();
         shareLink.href = shareUrl;
         shareLink.textContent = "Share Scrambled Web";
         shareLink.style.display = "block";
