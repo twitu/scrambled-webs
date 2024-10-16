@@ -3,7 +3,11 @@
   "name": "Scrambled Webs",
   "version": "1.0",
   "description": "Drag and reposition elements on any webpage",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": [
+    "<all_urls>",
+    "https://scrambledwebs.fun/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   },
