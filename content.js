@@ -6,9 +6,19 @@ let scrambledElements = new Map();
 let dragOffset = { x: 0, y: 0 };
 let globalZIndex = 9999;
 
+// When the content script loads, check if this tab should be scrambled
+chrome.storage.local.get(['scrambledTabs'], (result) => {
+  const scrambledTabs = result.scrambledTabs || {};
+  const tabId = chrome.runtime.id; // This gets the current tab ID
+  if (scrambledTabs[tabId]) {
+    isActive = true;
+    enableDragging();
+  }
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "toggle") {
-    isActive = !isActive;
+    isActive = request.isScrambled;
     if (isActive) {
       enableDragging();
     } else {
@@ -19,6 +29,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "load") {
     loadState(request.state);
   }
+  return true; // Indicates that the response is sent asynchronously
 });
 
 function enableDragging() {

@@ -2,14 +2,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleButton = document.getElementById("toggleButton");
   const saveButton = document.getElementById("saveButton");
   const shareLink = document.getElementById("shareLink");
-  let isActive = false;
+
+  // Check the current state when popup opens
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.storage.local.get(['scrambledTabs'], (result) => {
+      const scrambledTabs = result.scrambledTabs || {};
+      const isScrambled = scrambledTabs[tabs[0].id] || false;
+      updateButtonText(isScrambled);
+    });
+  });
 
   toggleButton.addEventListener("click", () => {
-    isActive = !isActive;
-    toggleButton.textContent = isActive ? "Disable Scrambling" : "Enable Scrambling";
-    
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "toggle" });
+      chrome.storage.local.get(['scrambledTabs'], (result) => {
+        const scrambledTabs = result.scrambledTabs || {};
+        const isScrambled = !scrambledTabs[tabs[0].id];
+        scrambledTabs[tabs[0].id] = isScrambled;
+        chrome.storage.local.set({scrambledTabs}, () => {
+          updateButtonText(isScrambled);
+          chrome.tabs.sendMessage(tabs[0].id, { action: "toggle", isScrambled });
+        });
+      });
     });
   });
 
@@ -25,4 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   });
+
+  function updateButtonText(isScrambled) {
+    toggleButton.textContent = isScrambled ? "Reset" : "Scramble!";
+  }
 });
