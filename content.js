@@ -53,6 +53,9 @@ function startDragging(e) {
   draggedElement.style.width = rect.width + "px";
   draggedElement.style.height = rect.height + "px";
   draggedElement.style.zIndex = (++globalZIndex).toString();
+  
+  // Add the dragging class
+  draggedElement.classList.add('scrambled-webs-dragging');
 }
 
 function drag(e) {
@@ -66,6 +69,10 @@ function drag(e) {
 }
 
 function stopDragging(e) {
+  if (draggedElement) {
+    // Remove the dragging class
+    draggedElement.classList.remove('scrambled-webs-dragging');
+  }
   draggedElement = null;
 }
 
