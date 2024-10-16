@@ -104,10 +104,13 @@ function saveState() {
 
   scrambledElements.forEach((styles, element) => {
     state.elements.push({
-      selector: generateUniqueSelector(element),
+      selector: generateComplexSelector(element),
+      tagName: element.tagName,
       left: styles.left,
       top: styles.top,
-      zIndex: styles.zIndex
+      zIndex: styles.zIndex,
+      width: element.style.width,
+      height: element.style.height
     });
   });
 
@@ -115,37 +118,72 @@ function saveState() {
 }
 
 function loadState(encodedState) {
-  const state = JSON.parse(atob(encodedState));
+  try {
+    const state = JSON.parse(atob(encodedState));
 
-  state.elements.forEach(elem => {
-    const element = document.querySelector(elem.selector);
-    if (element) {
-      saveOriginalStyles(element);
-      saveOriginalSize(element);
-      element.style.position = "fixed";
-      element.style.left = elem.left;
-      element.style.top = elem.top;
-      element.style.zIndex = elem.zIndex;
-      scrambledElements.set(element, { left: elem.left, top: elem.top, zIndex: elem.zIndex });
-    }
-  });
+    state.elements.forEach(elem => {
+      const element = findElementBySelector(elem.selector, elem.tagName);
+      if (element) {
+        saveOriginalStyles(element);
+        saveOriginalSize(element);
+        element.style.position = "fixed";
+        element.style.left = elem.left;
+        element.style.top = elem.top;
+        element.style.zIndex = elem.zIndex;
+        element.style.width = elem.width;
+        element.style.height = elem.height;
+        scrambledElements.set(element, { left: elem.left, top: elem.top, zIndex: elem.zIndex });
+      } else {
+        console.warn(`Element not found: ${elem.selector}`);
+      }
+    });
 
-  globalZIndex = Math.max(...state.elements.map(elem => parseInt(elem.zIndex)), 9999);
-  enableDragging();
+    globalZIndex = Math.max(...state.elements.map(elem => parseInt(elem.zIndex)), 9999);
+    enableDragging();
+  } catch (error) {
+    console.error("Error loading scrambled state:", error);
+  }
 }
 
-function generateUniqueSelector(element) {
-  if (element.id) {
-    return `#${element.id}`;
+function generateComplexSelector(element) {
+  const path = [];
+  while (element && element.nodeType === Node.ELEMENT_NODE) {
+    let selector = element.tagName.toLowerCase();
+    if (element.id) {
+      selector += `#${element.id}`;
+      path.unshift(selector);
+      break;
+    }
+    if (element.className) {
+      selector += `.${element.className.trim().replace(/\s+/g, '.')}`;
+    }
+    let sibling = element;
+    let nth = 1;
+    while (sibling = sibling.previousElementSibling) {
+      if (sibling.tagName === element.tagName) nth++;
+    }
+    if (nth !== 1) selector += `:nth-of-type(${nth})`;
+    path.unshift(selector);
+    element = element.parentNode;
   }
-  let selector = element.tagName.toLowerCase();
-  if (element.className) {
-    selector += `.${element.className.split(' ').join('.')}`;
+  return path.join(' > ');
+}
+
+function findElementBySelector(selector, tagName) {
+  try {
+    return document.querySelector(selector);
+  } catch (error) {
+    console.warn(`Invalid selector: ${selector}. Falling back to alternative method.`);
+    return findElementByTraversal(document.body, selector, tagName);
   }
-  const siblings = element.parentNode.children;
-  if (siblings.length > 1) {
-    const index = Array.from(siblings).indexOf(element);
-    selector += `:nth-child(${index + 1})`;
+}
+
+function findElementByTraversal(root, selector, tagName) {
+  const elements = root.getElementsByTagName(tagName);
+  for (let element of elements) {
+    if (generateComplexSelector(element) === selector) {
+      return element;
+    }
   }
-  return selector;
+  return null;
 }
