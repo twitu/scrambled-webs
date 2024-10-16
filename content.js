@@ -6,28 +6,28 @@ let scrambledElements = new Map();
 let dragOffset = { x: 0, y: 0 };
 let globalZIndex = 9999;
 
-// When the content script loads, check if this tab should be scrambled
-chrome.storage.local.get(['scrambledTabs'], (result) => {
-  const scrambledTabs = result.scrambledTabs || {};
-  const tabId = chrome.runtime.id; // This gets the current tab ID
-  if (scrambledTabs[tabId]) {
-    isActive = true;
-    enableDragging();
-  }
-});
+// Check if the page should be scrambled when it loads
+const urlParams = new URLSearchParams(window.location.search);
+const scrambledState = urlParams.get('scrambled');
+if (scrambledState) {
+  isActive = true;
+  loadState(scrambledState);
+  enableDragging();
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "toggle") {
-    isActive = request.isScrambled;
+    isActive = !isActive;
     if (isActive) {
       enableDragging();
     } else {
       disableDragging();
     }
+    sendResponse({ isScrambled: isActive });
   } else if (request.action === "save") {
     sendResponse(saveState());
-  } else if (request.action === "load") {
-    loadState(request.state);
+  } else if (request.action === "getState") {
+    sendResponse({ isScrambled: isActive });
   }
   return true; // Indicates that the response is sent asynchronously
 });

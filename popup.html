@@ -4,21 +4,65 @@
   <title>Scrambled Webs</title>
   <style>
     body {
-      width: 200px;
-      padding: 10px;
+      width: 250px;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f8ff; /* Light blue background */
+      color: #333;
+      text-align: center;
+    }
+    h2 {
+      color: #4a90e2; /* Bright blue */
+      margin-bottom: 20px;
     }
     button {
       width: 100%;
-      padding: 5px;
-      margin-bottom: 10px;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+    }
+    #toggleButton {
+      background-color: #4caf50; /* Green */
+      color: white;
+    }
+    #toggleButton:hover {
+      background-color: #45a049;
+    }
+    #saveButton {
+      background-color: #ff9800; /* Orange */
+      color: white;
+    }
+    #saveButton:hover {
+      background-color: #f57c00;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    #shareLink {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 8px 15px;
+      background-color: #4a90e2;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    #shareLink:hover {
+      background-color: #3a78c2;
     }
   </style>
 </head>
 <body>
   <h2>Scrambled Webs</h2>
   <button id="toggleButton">Scramble!</button>
-  <button id="saveButton">Save Scrambled State</button>
-  <a id="shareLink" style="display: none;"></a>
+  <button id="saveButton">Save Scrambled</button>
   <script src="popup.js"></script>
 </body>
 </html>

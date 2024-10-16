@@ -1,27 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
   const toggleButton = document.getElementById("toggleButton");
   const saveButton = document.getElementById("saveButton");
-  const shareLink = document.getElementById("shareLink");
 
   // Check the current state when popup opens
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.storage.local.get(['scrambledTabs'], (result) => {
-      const scrambledTabs = result.scrambledTabs || {};
-      const isScrambled = scrambledTabs[tabs[0].id] || false;
-      updateButtonText(isScrambled);
+    chrome.tabs.sendMessage(tabs[0].id, { action: "getState" }, (response) => {
+      updateButtonText(response.isScrambled);
     });
   });
 
   toggleButton.addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.storage.local.get(['scrambledTabs'], (result) => {
-        const scrambledTabs = result.scrambledTabs || {};
-        const isScrambled = !scrambledTabs[tabs[0].id];
-        scrambledTabs[tabs[0].id] = isScrambled;
-        chrome.storage.local.set({scrambledTabs}, () => {
-          updateButtonText(isScrambled);
-          chrome.tabs.sendMessage(tabs[0].id, { action: "toggle", isScrambled });
-        });
+      chrome.tabs.sendMessage(tabs[0].id, { action: "toggle" }, (response) => {
+        updateButtonText(response.isScrambled);
       });
     });
   });
@@ -32,9 +23,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentUrl = new URL(tabs[0].url);
         currentUrl.searchParams.set('scrambled', response);
         const shareUrl = currentUrl.toString();
-        shareLink.href = shareUrl;
-        shareLink.textContent = "Share Scrambled Web";
-        shareLink.style.display = "block";
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          // Show hint
+          saveButton.textContent = "Link Copied!";
+          
+          // Reset text after 2 seconds
+          setTimeout(() => {
+            saveButton.textContent = "Save Scrambled";
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+          saveButton.textContent = "Failed to copy";
+        });
       });
     });
   });
