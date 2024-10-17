@@ -6,6 +6,9 @@ let scrambledElements = new Map();
 let dragOffset = { x: 0, y: 0 };
 let globalZIndex = 9999;
 
+// Add this near the top of the file
+window.hasScrambledWebsLoaded = true;
+
 // Check if the page should be scrambled when it loads
 const urlParams = new URLSearchParams(window.location.search);
 const scrambledState = urlParams.get('scrambled');
@@ -30,6 +33,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ isScrambled: isActive });
   }
   return true; // Indicates that the response is sent asynchronously
+});
+
+// Add this event listener
+window.addEventListener("message", (event) => {
+  if (event.data.type === "SCRAMBLED_WEBS_LOAD_STATE") {
+    isActive = true;
+    loadState(event.data.state);
+    enableDragging();
+  }
 });
 
 function enableDragging() {

@@ -9,8 +9,22 @@ chrome.runtime.onInstalled.addListener(() => {
       const scrambledState = url.searchParams.get('scrambled');
       
       if (scrambledState) {
-        chrome.tabs.sendMessage(tabId, { action: "load", state: scrambledState });
+        chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          function: injectScrambledState,
+          args: [scrambledState]
+        });
       }
     }
   });
 });
+
+function injectScrambledState(scrambledState) {
+  if (window.hasScrambledWebsLoaded) {
+    window.postMessage({ type: "SCRAMBLED_WEBS_LOAD_STATE", state: scrambledState }, "*");
+  } else {
+    document.addEventListener("DOMContentLoaded", () => {
+      window.postMessage({ type: "SCRAMBLED_WEBS_LOAD_STATE", state: scrambledState }, "*");
+    });
+  }
+}
