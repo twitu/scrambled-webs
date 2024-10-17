@@ -6,6 +6,10 @@
 
 Scrambled Webs is an innovative browser extension designed to enhance the collaboration between product managers and frontend engineers. By providing a unique way to test and improve understanding of website structures, this tool promises to revolutionize your team's workflow.
 
+Check out this video demonstration of Scrambled Webs in action:
+
+[![Scrambled Webs Demo](https://img.youtube.com/vi/eIaa90CEQzQ/0.jpg)](https://www.youtube.com/watch?v=eIaa90CEQzQ)
+
 ## What is Scrambled Webs?
 
 Scrambled Webs is a cutting-edge browser extension that allows product managers to create an interactive puzzle from any website. This tool is perfect for:
