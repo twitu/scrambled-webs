@@ -9,13 +9,33 @@ let globalZIndex = 9999;
 // Add this near the top of the file
 window.hasScrambledWebsLoaded = true;
 
+// Mutation Observer to watch for DOM changes
+const observer = new MutationObserver((mutations) => {
+  if (isActive) {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            scrambleNewElement(node);
+          }
+        });
+      }
+    });
+  }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
 // Check if the page should be scrambled when it loads
 const urlParams = new URLSearchParams(window.location.search);
 const scrambledState = urlParams.get('scrambled');
 if (scrambledState) {
-  isActive = true;
-  loadState(scrambledState);
-  enableDragging();
+  // Delay the initial scrambling to allow more elements to load
+  setTimeout(() => {
+    isActive = true;
+    loadState(scrambledState);
+    enableDragging();
+  }, 1000);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -39,8 +59,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 window.addEventListener("message", (event) => {
   if (event.data.type === "SCRAMBLED_WEBS_LOAD_STATE") {
     isActive = true;
-    loadState(event.data.state);
-    enableDragging();
+    setTimeout(() => {
+      loadState(event.data.state);
+      enableDragging();
+    }, 1000);
   }
 });
 
@@ -132,16 +154,18 @@ function saveState() {
     elements: []
   };
 
-  scrambledElements.forEach((styles, element) => {
-    state.elements.push({
-      selector: generateComplexSelector(element),
-      tagName: element.tagName,
-      left: styles.left,
-      top: styles.top,
-      zIndex: styles.zIndex,
-      width: element.style.width,
-      height: element.style.height
-    });
+  document.querySelectorAll('*').forEach((element) => {
+    if (isElementScrambled(element)) {
+      state.elements.push({
+        selector: generateComplexSelector(element),
+        tagName: element.tagName,
+        left: element.style.left,
+        top: element.style.top,
+        zIndex: element.style.zIndex,
+        width: element.style.width,
+        height: element.style.height
+      });
+    }
   });
 
   return btoa(JSON.stringify(state));
@@ -154,22 +178,13 @@ function loadState(encodedState) {
     state.elements.forEach(elem => {
       const element = findElementBySelector(elem.selector, elem.tagName);
       if (element) {
-        saveOriginalStyles(element);
-        saveOriginalSize(element);
-        element.style.position = "fixed";
-        element.style.left = elem.left;
-        element.style.top = elem.top;
-        element.style.zIndex = elem.zIndex;
-        element.style.width = elem.width;
-        element.style.height = elem.height;
-        scrambledElements.set(element, { left: elem.left, top: elem.top, zIndex: elem.zIndex });
+        scrambleElement(element, elem);
       } else {
         console.warn(`Element not found: ${elem.selector}`);
       }
     });
 
     globalZIndex = Math.max(...state.elements.map(elem => parseInt(elem.zIndex)), 9999);
-    enableDragging();
   } catch (error) {
     console.error("Error loading scrambled state:", error);
   }
@@ -216,4 +231,30 @@ function findElementByTraversal(root, selector, tagName) {
     }
   }
   return null;
+}
+
+function isElementScrambled(element) {
+  return scrambledElements.has(element);
+}
+
+function scrambleElement(element, styles) {
+  element.style.position = "fixed";
+  element.style.left = styles.left;
+  element.style.top = styles.top;
+  element.style.zIndex = styles.zIndex;
+  element.style.width = styles.width;
+  element.style.height = styles.height;
+  scrambledElements.set(element, { left: styles.left, top: styles.top, zIndex: styles.zIndex });
+}
+
+function scrambleNewElement(element) {
+  if (isElementScrambled(element)) {
+    const styles = scrambledElements.get(element);
+    element.style.position = "fixed";
+    element.style.left = styles.left;
+    element.style.top = styles.top;
+    element.style.zIndex = styles.zIndex;
+    element.style.width = styles.width;
+    element.style.height = styles.height;
+  }
 }
